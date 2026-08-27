@@ -1,7 +1,7 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { env } from "./env";
+import { getAuthSecret } from "./app-secret";
 
 export const SESSION_COOKIE = "vd_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 dias
@@ -25,8 +25,8 @@ export type Session =
       role: "DOCTOR" | "ASSISTANT";
     };
 
-function secret() {
-  return new TextEncoder().encode(env.authSecret);
+async function secret() {
+  return new TextEncoder().encode(await getAuthSecret());
 }
 
 export async function createSessionToken(session: Session): Promise<string> {
@@ -35,7 +35,7 @@ export async function createSessionToken(session: Session): Promise<string> {
     .setIssuedAt()
     .setIssuer("vitaldesk-lite")
     .setExpirationTime(`${MAX_AGE_SECONDS}s`)
-    .sign(secret());
+    .sign(await secret());
 }
 
 export async function readSessionToken(
@@ -43,7 +43,7 @@ export async function readSessionToken(
 ): Promise<Session | null> {
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret(), {
+    const { payload } = await jwtVerify(token, await secret(), {
       issuer: "vitaldesk-lite",
     });
     if (payload.kind === "patient" || payload.kind === "staff") {

@@ -18,8 +18,16 @@ export const env = {
     }
     return s;
   },
+  /**
+   * URL pública, para los links dentro de los correos. Si APP_URL no está
+   * cargada, Vercel siempre expone VERCEL_URL, así que la derivamos de ahí.
+   */
   get appUrl() {
-    return process.env.APP_URL ?? "http://localhost:3000";
+    const explicita = process.env.APP_URL?.trim();
+    if (explicita) return explicita.replace(/\/$/, "");
+    const vercel = process.env.VERCEL_URL?.trim();
+    if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
+    return "http://localhost:3000";
   },
   get mailFrom() {
     return process.env.MAIL_FROM ?? "VitalDesk Lite <no-reply@vitaldesk.app>";
@@ -35,12 +43,19 @@ export const env = {
     };
   },
   /**
-   * Muestra el codigo en pantalla en vez de depender del correo.
-   * Solo se activa si SHOW_DEV_CODE=true Y ademas no hay SMTP configurado —
-   * o sea, en local y en un deploy de demo. Apenas configures SMTP se apaga
-   * solo, aunque la variable siga en "true".
+   * Muestra el código en pantalla en vez de mandarlo por correo.
+   *
+   * Se enciende solo cuando NO hay SMTP configurado, porque en ese caso los
+   * códigos no llegan a ningún lado y la app sería inusable. Apenas configurás
+   * SMTP_HOST se apaga solo — no hay que acordarse de nada.
+   *
+   * Se puede forzar apagado con SHOW_DEV_CODE="false".
+   *
+   * ⚠️ Mientras esté encendido, cualquiera que abra el link ve el código y
+   * puede entrar con el correo de otro. No usar con pacientes reales.
    */
   get showDevCode() {
-    return process.env.SHOW_DEV_CODE === "true" && !process.env.SMTP_HOST;
+    if (process.env.SHOW_DEV_CODE?.trim() === "false") return false;
+    return !process.env.SMTP_HOST?.trim();
   },
 };

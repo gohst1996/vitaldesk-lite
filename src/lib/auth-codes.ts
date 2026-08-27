@@ -4,6 +4,7 @@ import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { loginCodes } from "@/db/schema";
 import { env } from "./env";
+import { getAuthSecret } from "./app-secret";
 import { sendMail, loginCodeMail } from "./mailer";
 
 const CODE_TTL_MINUTES = 10;
@@ -25,9 +26,9 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function hashCode(code: string): string {
+async function hashCode(code: string): Promise<string> {
   return createHash("sha256")
-    .update(`${code}:${env.authSecret}`)
+    .update(`${code}:${await getAuthSecret()}`)
     .digest("hex");
 }
 
@@ -73,7 +74,7 @@ export async function issueLoginCode(opts: {
 
   await db.insert(loginCodes).values({
     email,
-    codeHash: hashCode(code),
+    codeHash: await hashCode(code),
     clinicId: opts.clinicId ?? null,
     purpose: opts.purpose ?? "login",
     payload: opts.payload ?? null,
@@ -115,7 +116,7 @@ export async function verifyLoginCode(
   if (row.attempts >= MAX_ATTEMPTS) return { ok: false, error: "too_many_attempts" };
   if (row.expiresAt.getTime() < Date.now()) return { ok: false, error: "expired" };
 
-  if (!safeEqual(hashCode(clean), row.codeHash)) {
+  if (!safeEqual(await hashCode(clean), row.codeHash)) {
     await db
       .update(loginCodes)
       .set({ attempts: row.attempts + 1 })
