@@ -43,3 +43,6 @@ next-env.d.ts
 # vitaldesk
 !.env.example
 .mailbox.log
+node_modules/
+probar-conexion.mjs
+*.sql

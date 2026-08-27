@@ -44,20 +44,42 @@ export async function GET() {
     .filter((k) => /^(PG|POSTGRES|NEON|DATABASE)/i.test(k))
     .sort();
 
+  // A qué endpoint se está conectando: host y base, sin usuario ni contraseña.
+  let destino = "desconocido";
+  for (const n of candidatas) {
+    const v = process.env[n];
+    if (!v || !v.trim() || !v.startsWith("post")) continue;
+    try {
+      const u = new URL(v);
+      destino = `${n} → ${u.hostname}${u.pathname}`;
+    } catch {
+      destino = `${n} → (no se pudo interpretar)`;
+    }
+    break;
+  }
+
   let baseDeDatos: string;
+  let causa: string[] = [];
   try {
     const { db } = await import("@/db");
     const { clinics } = await import("@/db/schema");
     const filas = await db.select({ slug: clinics.slug }).from(clinics).limit(5);
     baseDeDatos = `OK — ${filas.length} clínica(s): ${filas.map((f) => f.slug).join(", ")}`;
   } catch (err) {
-    // El mensaje puede traer el host; nunca la contraseña.
-    const msg = err instanceof Error ? err.message : String(err);
-    baseDeDatos = `FALLA — ${msg.replace(/:[^:@/]+@/g, ":***@").slice(0, 300)}`;
+    const limpiar = (s: string) => s.replace(/:[^:@/\s]+@/g, ":***@").slice(0, 400);
+    baseDeDatos = `FALLA — ${limpiar(err instanceof Error ? err.message : String(err))}`;
+    // Drizzle envuelve el error real en `cause`; ahí está el motivo de verdad.
+    let c: unknown = (err as { cause?: unknown })?.cause;
+    let vueltas = 0;
+    while (c && vueltas++ < 4) {
+      const e = c as { message?: string; code?: string; cause?: unknown };
+      causa.push(limpiar(`${e.code ? `[${e.code}] ` : ""}${e.message ?? String(c)}`));
+      c = e.cause;
+    }
   }
 
   return NextResponse.json(
-    { conexion: env, config: otras, nombresPostgres, baseDeDatos },
+    { destino, conexion: env, config: otras, nombresPostgres, baseDeDatos, causa },
     { headers: { "cache-control": "no-store" } },
   );
 }
