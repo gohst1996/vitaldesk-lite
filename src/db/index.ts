@@ -10,12 +10,36 @@ type Db = ReturnType<typeof drizzle<typeof schema>>;
  */
 const globalForDb = globalThis as unknown as { __vdPool?: Pool; __vdDb?: Db };
 
+/**
+ * Los integradores de Postgres no siempre inyectan la variable con el mismo
+ * nombre: la integración Neon–Vercel puede dejar POSTGRES_URL en vez de
+ * DATABASE_URL. Se prueban en orden de preferencia, priorizando las que usan
+ * el pooler.
+ */
+const NOMBRES_CONEXION = [
+  "DATABASE_URL",
+  "POSTGRES_URL",
+  "NEON_DATABASE_URL",
+  "POSTGRES_PRISMA_URL",
+  "DATABASE_URL_UNPOOLED",
+  "POSTGRES_URL_NON_POOLING",
+] as const;
+
+function connectionStringFromEnv(): string | undefined {
+  for (const nombre of NOMBRES_CONEXION) {
+    const v = process.env[nombre];
+    if (v && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
 function makePool(): Pool {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = connectionStringFromEnv();
   if (!connectionString) {
     throw new Error(
-      "Falta DATABASE_URL en las variables de entorno. " +
-        "En local: copiá .env.example a .env. " +
+      "No encontré la cadena de conexión a Postgres. Buscé en: " +
+        NOMBRES_CONEXION.join(", ") +
+        ". En local: copiá .env.example a .env. " +
         "En Vercel: Settings → Environment Variables.",
     );
   }
