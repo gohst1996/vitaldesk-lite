@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { BannerDemo } from "@/components/banner-demo";
 
 export const metadata: Metadata = {
   title: "VitalDesk Lite",
@@ -31,7 +32,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <BannerDemo />
+        {children}
+      </body>
     </html>
   );
 }

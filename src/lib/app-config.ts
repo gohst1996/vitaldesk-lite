@@ -1,5 +1,6 @@
 import "server-only";
 import { pool } from "@/db";
+import { MODO_DEMO_FORZADO } from "./demo";
 
 /**
  * Configuración que puede vivir en la base cuando no está en el entorno.
@@ -100,6 +101,8 @@ export async function getMailFrom(): Promise<string> {
  * correo. Apenas hay SMTP configurado, se apaga solo.
  */
 export async function mostrarCodigoEnPantalla(): Promise<boolean> {
+  // El interruptor de src/lib/demo.ts manda sobre todo lo demás.
+  if (MODO_DEMO_FORZADO) return true;
   if (process.env.SHOW_DEV_CODE?.trim() === "false") return false;
   return (await getSmtp()) === null;
 }
