@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+
+  /* Fuente del sistema: carga instantánea y se ve nativa en cada dispositivo. */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* Evita el zoom automatico de iOS al enfocar un input */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* Respeta el notch y la barra de gestos */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility field {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400;
+}
+.field:focus {
+  border-color: var(--color-brand-500);
+  box-shadow: 0 0 0 3px var(--color-brand-100);
+}
+
+@utility btn {
+  @apply inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-semibold transition active:scale-[.985] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply btn bg-brand-600 text-white shadow-sm;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-brand-700);
+}
+
+@utility btn-ghost {
+  @apply btn border border-slate-200 bg-white text-slate-700;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+@utility btn-danger {
+  @apply btn border border-rose-200 bg-white text-rose-700;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+@utility card {
+  @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm;
+}
+
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-slate-700;
+}
+
+@keyframes vd-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-in-up {
+  animation: vd-in 0.22s ease-out both;
+}
