@@ -17,6 +17,7 @@ import {
   getPatientByEmail,
 } from "@/lib/queries";
 import { clearSession, requirePatient, setSession } from "@/lib/session";
+import { mensajeDeFallo } from "@/lib/mensajes";
 
 export type FormState = {
   error?: string;
@@ -72,9 +73,7 @@ export async function requestBooking(
   });
 
   if (!issued.ok) {
-    return {
-      error: `Pediste demasiados códigos. Probá de nuevo en ${issued.retryAfterMinutes} minutos.`,
-    };
+    return { error: mensajeDeFallo(issued) };
   }
 
   const params = new URLSearchParams({ email: normalizeEmail(v.email) });
@@ -114,9 +113,7 @@ export async function requestPatientLogin(
     purpose: "login",
   });
   if (!issued.ok) {
-    return {
-      error: `Pediste demasiados códigos. Probá de nuevo en ${issued.retryAfterMinutes} minutos.`,
-    };
+    return { error: mensajeDeFallo(issued) };
   }
 
   const params = new URLSearchParams({ email: normalizeEmail(parsed.data.email) });
@@ -211,9 +208,7 @@ export async function resendPatientCode(
     purpose: "login",
   });
   if (!issued.ok) {
-    return {
-      error: `Esperá ${issued.retryAfterMinutes} minutos antes de pedir otro código.`,
-    };
+    return { error: mensajeDeFallo(issued) };
   }
   return {
     notice: "Te mandamos un código nuevo.",

@@ -20,6 +20,7 @@ import {
 } from "@/lib/queries";
 import { clearSession, requireStaff, setSession } from "@/lib/session";
 import type { FormState } from "./patient";
+import { mensajeDeFallo } from "@/lib/mensajes";
 
 export type { FormState };
 
@@ -48,9 +49,7 @@ export async function requestStaffLogin(
     purpose: "login",
   });
   if (!issued.ok) {
-    return {
-      error: `Pediste demasiados códigos. Probá en ${issued.retryAfterMinutes} minutos.`,
-    };
+    return { error: mensajeDeFallo(issued) };
   }
 
   const params = new URLSearchParams({ email: normalizeEmail(email) });
@@ -106,7 +105,7 @@ export async function resendStaffCode(
     clinicName: found.c.name,
   });
   if (!issued.ok) {
-    return { error: `Esperá ${issued.retryAfterMinutes} minutos.` };
+    return { error: mensajeDeFallo(issued) };
   }
   return { notice: "Te mandamos un código nuevo.", devCode: issued.devCode };
 }

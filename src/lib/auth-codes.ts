@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { loginCodes } from "@/db/schema";
 import { env } from "./env";
 import { getAuthSecret } from "./app-secret";
+import { mostrarCodigoEnPantalla } from "./app-config";
 import { sendMail, loginCodeMail } from "./mailer";
 
 const CODE_TTL_MINUTES = 10;
@@ -45,7 +46,8 @@ function safeEqual(a: string, b: string): boolean {
 
 export type IssueResult =
   | { ok: true; devCode?: string }
-  | { ok: false; error: "rate_limited"; retryAfterMinutes: number };
+  | { ok: false; error: "rate_limited"; retryAfterMinutes: number }
+  | { ok: false; error: "mail_failed" };
 
 /**
  * Genera un codigo de 6 digitos, lo guarda hasheado y lo manda por correo.
@@ -81,10 +83,19 @@ export async function issueLoginCode(opts: {
     expiresAt: new Date(Date.now() + CODE_TTL_MINUTES * 60_000),
   });
 
-  const mail = loginCodeMail(code, opts.clinicName);
-  await sendMail({ to: email, ...mail });
+  const enPantalla = await mostrarCodigoEnPantalla();
 
-  return { ok: true, devCode: env.showDevCode ? code : undefined };
+  try {
+    const mail = loginCodeMail(code, opts.clinicName);
+    await sendMail({ to: email, ...mail });
+  } catch (err) {
+    console.error("[correo] no se pudo enviar el código:", err);
+    // Si el correo no sale y tampoco mostramos el código en pantalla, el
+    // usuario se quedaría esperando algo que nunca llega. Mejor decírselo.
+    if (!enPantalla) return { ok: false, error: "mail_failed" };
+  }
+
+  return { ok: true, devCode: enPantalla ? code : undefined };
 }
 
 export type VerifyResult =

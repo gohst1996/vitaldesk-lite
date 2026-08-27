@@ -1,5 +1,5 @@
 import { appendFile } from "fs/promises";
-import { env } from "./env";
+import { getSmtp, getMailFrom } from "./app-config";
 
 type Mail = { to: string; subject: string; html: string; text: string };
 
@@ -8,7 +8,7 @@ type Mail = { to: string; subject: string; html: string; text: string };
  * en .mailbox.log — asi el flujo completo se puede probar sin servidor de correo.
  */
 export async function sendMail(mail: Mail): Promise<void> {
-  const smtp = env.smtp;
+  const smtp = await getSmtp();
 
   if (!smtp) {
     const dump = [
@@ -36,10 +36,15 @@ export async function sendMail(mail: Mail): Promise<void> {
     port: smtp.port,
     secure: smtp.port === 465,
     auth: smtp.user ? { user: smtp.user, pass: smtp.pass } : undefined,
+    // Sin estos límites, un SMTP que no responde deja al usuario esperando
+    // indefinidamente en la pantalla de login.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   });
 
   await transport.sendMail({
-    from: env.mailFrom,
+    from: await getMailFrom(),
     to: mail.to,
     subject: mail.subject,
     text: mail.text,
